@@ -1,14 +1,15 @@
 from utils import read_data
 
 
-def calc_fuel_stage_one(fuel):
-    return int(fuel/3)-2
+def calc_fuel_stage_one(mass):
+    return (mass // 3) - 2
 
 
-def calc_fuel_stage_two(fuel):
-    current_amount = fuel
+def calc_fuel_stage_two(mass):
+    current_amount = mass
     total_fuel = 0
-    # The parenthesis here are needed so it doesn't try to assign (adjusted_calc(foo) > 0) to new_amount
+    # The parenthesis here are needed so it doesn't try to assign
+    # the boolean (adjusted_calc(foo) > 0) to new_amount
     while (new_amount := calc_fuel_stage_one(current_amount)) > 0:
         current_amount = new_amount
         total_fuel += new_amount
