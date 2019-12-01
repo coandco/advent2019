@@ -10,5 +10,4 @@ DAY_NUM = 1
 data = get_data(year=YEAR_NUM, day=DAY_NUM)
 
 file_location = Path(f'inputs/advent{YEAR_NUM}_day{DAY_NUM:02d}_input.txt')
-with file_location.open(mode='w') as data_file:
-    data_file.write(data)
+file_location.write_text(data)
