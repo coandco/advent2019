@@ -1,6 +1,6 @@
 from utils import read_data
 
-DATA = [int(x) for x in read_data(__file__).split(",")]
+DATA = [int(x) for x in read_data().split(",")]
 
 
 class OpCodeBase(object):

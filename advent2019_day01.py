@@ -16,7 +16,7 @@ def calc_fuel_stage_two(mass):
     return total_fuel
 
 
-DATA = read_data(__file__).split("\n")
+DATA = read_data().split("\n")
 
 STAGE_ONE = [calc_fuel_stage_one(int(x)) for x in DATA]
 total = sum(STAGE_ONE)
