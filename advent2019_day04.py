@@ -10,9 +10,8 @@ def has_repeated_char(numstr):
 
 
 def meets_part1_criteria(numstr):
-    digits = [int(x) for x in numstr]
-    lowest_digit = 0
-    for digit in digits:
+    lowest_digit = '0'
+    for digit in numstr:
         if digit < lowest_digit:
             return False
         else:
