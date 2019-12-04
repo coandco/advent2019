@@ -38,7 +38,6 @@ if __name__ == '__main__':
     for number in range(low, high+1):
         if meets_part1_criteria(str(number)):
             part1_passwords.append(str(number))
-    for number in part1_passwords:
-        part2_passwords = [x for x in part1_passwords if meets_part2_criteria(x)]
+    part2_passwords = [x for x in part1_passwords if meets_part2_criteria(x)]
     print(len(part1_passwords))
     print(len(part2_passwords))
