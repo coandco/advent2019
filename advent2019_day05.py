@@ -1,41 +1,36 @@
 from utils import read_data
-from typing import List, Tuple
-
-
-def interpret_opcode(opcode: int) -> Tuple[int, List[int]]:
-    base_opcode = opcode % 100
-    modes = opcode // 100
-    modes_array = []
-    while modes > 0:
-        modes_array.append(modes % 10)
-        modes = modes // 10
-    return base_opcode, modes_array
-
 
 MODE_POSITION = 0
 MODE_IMMEDIATE = 1
 
+OPCODE = 0
+INPUT_PARAM = 1
+OUTPUT_PARAM = 2
+
 
 class OpCodeBase(object):
     length = 0
+    param_types = []
 
-    def __init__(self, tape, index, input):
+    def __init__(self, tape, index, input_value):
         self.tape = tape
         self.index = index
         self.instruction = tape[index:index+self.length]
-        self.input = input
-        self.opcode, self.modes = interpret_opcode(tape[index])
+        self.input = input_value
+        self.params = self.read_params()
 
-    def read_value(self, value, position):
-        if position < len(self.modes):
-            mode = self.modes[position]
-        else:
-            mode = MODE_POSITION
-
-        if mode == MODE_POSITION:
-            return self.tape[value]
-        else:
-            return value
+    def read_params(self):
+        param_list = []
+        modes = self.instruction[0] // 100
+        for i in range(1, self.length):
+            # get mode
+            param_mode = modes % 10
+            modes = modes // 10
+            if param_mode == MODE_POSITION and self.param_types[i] == INPUT_PARAM:
+                param_list.append(self.tape[self.instruction[i]])
+            else:
+                param_list.append(self.instruction[i])
+        return param_list
 
     def run(self):
         pass
@@ -43,47 +38,51 @@ class OpCodeBase(object):
 
 class OpcodeAdd(OpCodeBase):
     length = 4
+    param_types = (OPCODE, INPUT_PARAM, INPUT_PARAM, OUTPUT_PARAM)
 
     def run(self):
-        pos_one, pos_two, result_pos = self.instruction[1:self.length]
-        self.tape[result_pos] = self.read_value(pos_one, 0) + self.read_value(pos_two, 1)
+        pos_one, pos_two, result_pos = self.params
+        self.tape[result_pos] = pos_one + pos_two
         return self.index + self.length
 
 
 class OpcodeMultiply(OpCodeBase):
     length = 4
+    param_types = (OPCODE, INPUT_PARAM, INPUT_PARAM, OUTPUT_PARAM)
 
     def run(self):
-        pos_one, pos_two, result_pos = self.instruction[1:self.length]
-        self.tape[result_pos] = self.read_value(pos_one, 0) * self.read_value(pos_two, 1)
+        pos_one, pos_two, result_pos = self.params
+        self.tape[result_pos] = pos_one * pos_two
         return self.index + self.length
 
 
 class OpcodeInput(OpCodeBase):
     length = 2
+    param_types = (OPCODE, OUTPUT_PARAM)
 
     def run(self):
-        position_to_store = self.instruction[1]
+        position_to_store = self.params[0]
         self.tape[position_to_store] = self.input
         return self.index + self.length
 
 
 class OpcodeOutput(OpCodeBase):
     length = 2
+    param_types = (OPCODE, INPUT_PARAM)
 
     def run(self):
-        value_to_output = self.instruction[1]
-        actual_value = self.read_value(value_to_output, 0)
+        value_to_output = self.params[0]
+        actual_value = value_to_output
         print(f"OUTPUT VALUE: {actual_value}")
         return self.index + self.length
 
 
 class OpcodeJumpIfTrue(OpCodeBase):
     length = 3
+    param_types = (OPCODE, INPUT_PARAM, INPUT_PARAM)
 
     def run(self):
-        test_value = self.read_value(self.instruction[1], 0)
-        jump_location = self.read_value(self.instruction[2], 1)
+        test_value, jump_location = self.params
         if test_value != 0:
             return jump_location
         else:
@@ -92,10 +91,10 @@ class OpcodeJumpIfTrue(OpCodeBase):
 
 class OpcodeJumpIfFalse(OpCodeBase):
     length = 3
+    param_types = (OPCODE, INPUT_PARAM, INPUT_PARAM)
 
     def run(self):
-        test_value = self.read_value(self.instruction[1], 0)
-        jump_location = self.read_value(self.instruction[2], 1)
+        test_value, jump_location = self.params
         if test_value == 0:
             return jump_location
         else:
@@ -104,11 +103,10 @@ class OpcodeJumpIfFalse(OpCodeBase):
 
 class OpcodeLessThan(OpCodeBase):
     length = 4
+    param_types = (OPCODE, INPUT_PARAM, INPUT_PARAM, OUTPUT_PARAM)
 
     def run(self):
-        pos_one = self.read_value(self.instruction[1], 0)
-        pos_two = self.read_value(self.instruction[2], 1)
-        output_pos = self.instruction[3]
+        pos_one, pos_two, output_pos = self.params
         if pos_one < pos_two:
             self.tape[output_pos] = 1
         else:
@@ -118,11 +116,10 @@ class OpcodeLessThan(OpCodeBase):
 
 class OpcodeEqual(OpCodeBase):
     length = 4
+    param_types = (OPCODE, INPUT_PARAM, INPUT_PARAM, OUTPUT_PARAM)
 
     def run(self):
-        pos_one = self.read_value(self.instruction[1], 0)
-        pos_two = self.read_value(self.instruction[2], 1)
-        output_pos = self.instruction[3]
+        pos_one, pos_two, output_pos = self.params
         if pos_one == pos_two:
             self.tape[output_pos] = 1
         else:
@@ -132,6 +129,7 @@ class OpcodeEqual(OpCodeBase):
 
 class OpcodeHalt(OpCodeBase):
     length = 1
+    param_types = (OPCODE,)
 
     def run(self):
         return None  # Halt processing
