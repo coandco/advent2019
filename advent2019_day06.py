@@ -3,7 +3,6 @@ from collections import defaultdict
 
 
 def generate_reverse_map(data):
-    forward_map = defaultdict(list)
     reverse_map = {'COM': None}
     for line in data:
         orbitee, orbiter = line.split(')', 1)
