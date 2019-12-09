@@ -29,33 +29,35 @@ class OpCodeBase(object):
 
     @property
     def length(self):
-        return len(self.param_types)
+        return len(self.param_types) + 1
 
     def get_param_modes(self):
         mode_list = []
         modes = self.instruction[0] // 100
-        for i in range(1, self.length):
+        for _ in range(len(self.param_types)):
             mode_list.append(modes % 10)
             modes = modes // 10
         return mode_list
 
     def read_params(self):
         param_list = []
-        modes = self.instruction[0] // 100
-        for i in range(1, self.length):
-            # get mode
-            param_mode = modes % 10
-            modes = modes // 10
-            if param_mode == MODE_POSITION and self.param_types[i] == INPUT_PARAM:
-                param_list.append(self.tape[self.instruction[i]])
-            elif param_mode == MODE_RELATIVE:
+        for i, value in enumerate(self.instruction[1:]):
+            if self.param_modes[i] == MODE_POSITION:
                 if self.param_types[i] == INPUT_PARAM:
-                    param_list.append(self.tape[self.relative_base+self.instruction[i]])
+                    param_list.append(self.tape[value])
                 # For output params, we're doing the dereference in the run function itself
                 elif self.param_types[i] == OUTPUT_PARAM:
-                    param_list.append(self.relative_base + self.instruction[i])
+                    param_list.append(value)
+            elif self.param_modes[i] == MODE_RELATIVE:
+                if self.param_types[i] == INPUT_PARAM:
+                    param_list.append(self.tape[self.relative_base+value])
+                # For output params, we're doing the dereference in the run function itself
+                elif self.param_types[i] == OUTPUT_PARAM:
+                    param_list.append(self.relative_base + value)
+            elif self.param_modes[i] == MODE_IMMEDIATE:
+                param_list.append(value)
             else:
-                param_list.append(self.instruction[i])
+                raise Exception(f"Unknown mode {self.param_modes[i]}")
         return param_list
 
     def run(self):
@@ -64,7 +66,7 @@ class OpCodeBase(object):
 
 class OpcodeAdd(OpCodeBase):
     pretty_name = "add"
-    param_types = (OPCODE, INPUT_PARAM, INPUT_PARAM, OUTPUT_PARAM)
+    param_types = (INPUT_PARAM, INPUT_PARAM, OUTPUT_PARAM)
 
     def run(self):
         pos_one, pos_two, result_pos = self.params
@@ -73,7 +75,7 @@ class OpcodeAdd(OpCodeBase):
 
 class OpcodeMultiply(OpCodeBase):
     pretty_name = "mul"
-    param_types = (OPCODE, INPUT_PARAM, INPUT_PARAM, OUTPUT_PARAM)
+    param_types = (INPUT_PARAM, INPUT_PARAM, OUTPUT_PARAM)
 
     def run(self):
         pos_one, pos_two, result_pos = self.params
@@ -82,7 +84,7 @@ class OpcodeMultiply(OpCodeBase):
 
 class OpcodeInput(OpCodeBase):
     pretty_name = "input"
-    param_types = (OPCODE, OUTPUT_PARAM)
+    param_types = (OUTPUT_PARAM,)
 
     def run(self):
         position_to_store = self.params[0]
@@ -91,7 +93,7 @@ class OpcodeInput(OpCodeBase):
 
 class OpcodeOutput(OpCodeBase):
     pretty_name = "output"
-    param_types = (OPCODE, INPUT_PARAM)
+    param_types = (INPUT_PARAM,)
 
     def run(self):
         value_to_output = self.params[0]
@@ -101,7 +103,7 @@ class OpcodeOutput(OpCodeBase):
 
 class OpcodeJumpIfTrue(OpCodeBase):
     pretty_name = "jump_true"
-    param_types = (OPCODE, INPUT_PARAM, INPUT_PARAM)
+    param_types = (INPUT_PARAM, INPUT_PARAM)
 
     def run(self):
         test_value, jump_location = self.params
@@ -111,7 +113,7 @@ class OpcodeJumpIfTrue(OpCodeBase):
 
 class OpcodeJumpIfFalse(OpCodeBase):
     pretty_name = "jump_false"
-    param_types = (OPCODE, INPUT_PARAM, INPUT_PARAM)
+    param_types = (INPUT_PARAM, INPUT_PARAM)
 
     def run(self):
         test_value, jump_location = self.params
@@ -121,7 +123,7 @@ class OpcodeJumpIfFalse(OpCodeBase):
 
 class OpcodeLessThan(OpCodeBase):
     pretty_name = "less_than"
-    param_types = (OPCODE, INPUT_PARAM, INPUT_PARAM, OUTPUT_PARAM)
+    param_types = (INPUT_PARAM, INPUT_PARAM, OUTPUT_PARAM)
 
     def run(self):
         pos_one, pos_two, output_pos = self.params
@@ -133,7 +135,7 @@ class OpcodeLessThan(OpCodeBase):
 
 class OpcodeEqual(OpCodeBase):
     pretty_name = "equal"
-    param_types = (OPCODE, INPUT_PARAM, INPUT_PARAM, OUTPUT_PARAM)
+    param_types = (INPUT_PARAM, INPUT_PARAM, OUTPUT_PARAM)
 
     def run(self):
         pos_one, pos_two, output_pos = self.params
@@ -145,7 +147,7 @@ class OpcodeEqual(OpCodeBase):
 
 class OpcodeAdjustRelativeBase(OpCodeBase):
     pretty_name = "relbase"
-    param_types = (OPCODE, INPUT_PARAM)
+    param_types = (INPUT_PARAM,)
 
     def run(self):
         self.relative_adjustment_amount = self.params[0]
@@ -154,7 +156,7 @@ class OpcodeAdjustRelativeBase(OpCodeBase):
 class OpcodeHalt(OpCodeBase):
     pretty_name = "halt"
     length = 1
-    param_types = (OPCODE,)
+    param_types = tuple()  # blank tuple for length purposes
 
     def run(self):
         self.newindex = None  # Halt processing
@@ -173,20 +175,39 @@ OPCODES = {
     99: OpcodeHalt
 }
 
-# work in progress
-# def pretty_print_instruction(inst: OpCodeBase):
-#     outstr = f"i{inst.index} r{inst.relative_base} {inst.pretty_name}"
-#     modes = [int(x) for x in list(reversed(f"{inst.instruction[0]:0{inst.length+1}d}"))][2:]
-#     for i, param in enumerate(inst.instruction[1:]):
-#         if modes[i] == MODE_POSITION:
-#             outstr += f" pos({param})"
-#         elif modes[i] == MODE_RELATIVE:
-#             outstr += f" relpos({param})"
-#         elif modes[i] == MODE_IMMEDIATE:
-#             outstr += f" {param}"
-#         else:
-#             outstr += f" UNKNOWN({param})"
-#     return outstr
+
+def pretty_print_instruction(inst: OpCodeBase, print_index=False, print_relbase=False):
+    outstr = ""
+    if print_index:
+        outstr += f"{inst.index:05d} "
+    if print_relbase:
+        outstr += f"[R{inst.relative_base:5}] "
+    outstr += f"{inst.pretty_name:10}"
+    for i, param in enumerate(inst.instruction[1:]):
+        if inst.param_modes[i] == MODE_POSITION:
+            outstr += f" pos({param})"
+        elif inst.param_modes[i] == MODE_RELATIVE:
+            outstr += f" rel({param})"
+        elif inst.param_modes[i] == MODE_IMMEDIATE:
+            outstr += f" imm({param})"
+        else:
+            outstr += f" UNKNOWN({param})"
+    return outstr
+
+
+def pretty_print_tape(tape, starting_pos=0):
+    tmptape = defaultdict(int, {x[0]: x[1] for x in enumerate(tape)})
+    curpos = starting_pos
+    while curpos < len(tape):
+        opcode = tape[curpos] % 100
+        try:
+            instruction = OPCODES[opcode](tmptape, curpos, iter([]), relative_base=0)
+        except KeyError:
+            # Once we hit an unknown opcode, we can't continue because we don't know how many bytes to advance
+            print("Hit bad opcode, terminating naive pretty print")
+            break
+        print(pretty_print_instruction(instruction, print_index=True))
+        curpos += instruction.length
 
 
 def process_instruction(tape, index, input_value, relative_base):
@@ -195,7 +216,8 @@ def process_instruction(tape, index, input_value, relative_base):
     if opcode in OPCODES:
         instruction = OPCODES[opcode](tape, index, input_value, relative_base)
         instruction.run()
-        #print(pretty_print_instruction(instruction))
+        # Good for debug, not necessary most of the time
+        # print(pretty_print_instruction(instruction, print_index=True, print_relbase=True))
         return instruction.newindex, instruction
     else:
         raise Exception(f"Unknown opcode {opcode} at position {index} on {tape}")
