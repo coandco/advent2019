@@ -245,16 +245,18 @@ def run_tape_generator(tape):
     tmptape = defaultdict(int, {x[0]: x[1] for x in enumerate(tape)})
     curpos = 0
     relative_base = 0
-    input_value = yield
+    input_base = yield
+    input_iter = iter([input_base])
     output_values = []
     while curpos is not None:
-        curpos, completed_instruction = process_instruction(tmptape, curpos, iter([input_value]), relative_base)
+        curpos, completed_instruction = process_instruction(tmptape, curpos, input_iter, relative_base)
         if completed_instruction.relative_adjustment_amount is not None:
             relative_base += completed_instruction.relative_adjustment_amount
         if completed_instruction.output_value is not None:
             output_values.append(completed_instruction.output_value)
             if len(output_values) == 2:
-                input_value = yield tuple(output_values)
+                input_base = yield tuple(output_values)
+                input_iter = iter([input_base])
                 output_values = []
 
 

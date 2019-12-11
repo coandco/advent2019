@@ -1,7 +1,7 @@
 from utils import read_data
 from pathlib import Path
 from typing import NamedTuple, List
-from advent2019_day11_intcode import run_tape_with_output_stop, run_tape_generator
+from advent2019_day11_intcode import run_tape_generator
 from collections import defaultdict
 import numpy as np
 
@@ -12,7 +12,6 @@ class Coord(NamedTuple):
 
 
 DATA = [int(x) for x in read_data().split(",")]
-DAY5_DATA = [int(x) for x in Path(f'inputs/advent2019_day05_input.txt').read_text().split(",")]
 
 PANEL_BLACK = 0
 PANEL_WHITE = 1
@@ -30,7 +29,7 @@ def go_in_direction(coord: Coord, direction: str) -> Coord:
 def run_painter(tape: List[int], initial_square=PANEL_BLACK):
     field = defaultdict(int)
     painted_locations = set()
-    curloc = Coord(0,0)
+    curloc = Coord(0, 0)
     curdir = '^'
     field[curloc] = initial_square
     program = run_tape_generator(tape)
@@ -57,6 +56,7 @@ if __name__ == '__main__':
     # and it doesn't have any negative values
     max_x = max([coord.x for coord in just_white_panels])
     max_y = max([coord.y for coord in just_white_panels])
+    # Using numpy just for convenient output
     field = np.zeros((max_y+1, max_x+1), dtype=np.int)
     for coord in just_white_panels:
         field[coord.y, coord.x] = 1
