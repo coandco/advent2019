@@ -2,6 +2,7 @@ from utils import read_data
 from advent2019_day13_intcode import run_tape_generator
 import numpy as np
 import curses
+import sys
 
 
 DATA = [int(x) for x in read_data().split(",")]
@@ -30,12 +31,12 @@ def print_screen(screen, score=0):
     print(f"Score: {score}")
 
 
-def print_screen_curses(curses_screen, screen, score):
-    with np.printoptions(linewidth=2000, threshold=2000, formatter={'int': lambda x: TILE_PRINT_DICT[x]}):
-        board_str = str(screen)
-    curses_screen.addstr(0, 0, board_str)
-    curses_screen.addstr(26, 2, f"Score: {score}")
-    curses_screen.refresh()
+class dummy_curses(object):
+    def addstr(self, y, x, str):
+        pass
+
+    def refresh(self):
+        pass
 
 
 def part_one(data, size):
@@ -64,7 +65,10 @@ def get_next_input(ball_xpos, paddle_xpos):
 def part_two(data):
     score = 0
     current_paddle_position = 0
-    curses_screen = curses.initscr()
+    if sys.stdout.isatty():
+        curses_screen = curses.initscr()
+    else:
+        curses_screen = dummy_curses()
     program = run_tape_generator(data, num_outputs=3)
     next(program)  # Run generator to first yield
 
