@@ -25,7 +25,6 @@ def deal_new(stack):
 def part_one(data: List[str], deck_size: int):
     stack = list(range(deck_size))
     for line in data:
-        print(line)
         if line.startswith("deal into new stack"):
             stack = deal_new(stack)
         elif line.startswith("deal with increment "):
