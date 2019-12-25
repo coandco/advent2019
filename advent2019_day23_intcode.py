@@ -3,7 +3,6 @@ from queue import Queue
 from collections import deque
 from typing import Tuple, NamedTuple
 import time
-import logging
 
 MODE_POSITION = 0
 MODE_IMMEDIATE = 1
@@ -18,14 +17,13 @@ class OpCodeBase(object):
     pretty_name = ""
     param_types = []
 
-    def __init__(self, tape, index, input_queue: deque, relative_base, logger=None):
+    def __init__(self, tape, index, input_queue: deque, relative_base):
         self.tape = tape
         self.index = index
         self.newindex = self.index + self.length
         self.instruction = [tape[x] for x in range(self.index, self.index+self.length)]
         self.input = input_queue
         self.relative_base = relative_base
-        self.logger = logger
         self.output_value = None
         self.relative_adjustment_amount = None
         self.param_modes = self.get_param_modes()
@@ -280,10 +278,6 @@ class Packet(NamedTuple):
 
 
 def run_tape_multithreaded(tape, instance_id, input_queue: Queue, output_queue: Queue, num_outputs=1):
-    logger = logging.getLogger(f"tape{instance_id}")
-    logger.addHandler(logging.FileHandler(filename=f"network{instance_id}.log"))
-    logger.setLevel(logging.DEBUG)
-
     tmptape = defaultdict(int, {x[0]: x[1] for x in enumerate(tape)})
     curpos = 0
     relative_base = 0
@@ -293,7 +287,6 @@ def run_tape_multithreaded(tape, instance_id, input_queue: Queue, output_queue: 
     internal_input_queue.append(instance_id)
 
     while curpos is not None:
-        logger.info(f"{instance_id}: here!")
         if not input_queue.empty():
             internal_input_queue.extend(input_queue.get())
         curpos, completed_instruction = process_instruction(tmptape, curpos, internal_input_queue, relative_base)
