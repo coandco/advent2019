@@ -1,5 +1,4 @@
 from utils import read_data
-from collections import defaultdict
 
 
 def generate_reverse_map(data):
