@@ -47,8 +47,9 @@ def get_relative(grid_stack: Dict[int, np.ndarray], requested_level: int) -> np.
 
 
 def evolve_board(grid, neighbor_grid):
-    return np.logical_and(np.logical_or(neighbor_grid == 1, neighbor_grid == 2), np.invert(grid)
-                          | np.bitwise_and(neighbor_grid == 1, grid))
+    empty_with_new_bugs = ((neighbor_grid == 1) | (neighbor_grid == 2)) & np.invert(grid)
+    bugs_still_there = (neighbor_grid == 1) & grid
+    return empty_with_new_bugs | bugs_still_there
 
 
 def evolve_board_part_one(grid: np.ndarray):
@@ -56,8 +57,6 @@ def evolve_board_part_one(grid: np.ndarray):
                           [1, 1, 1],
                           [0, 1, 0]], dtype=np.int)
     neighbor_grid = convolve2d(grid, adjacency, mode='same', boundary='fill', fillvalue=0) - grid
-    # with np.printoptions(linewidth=2000, threshold=20000):
-    #     print(neighbor_grid)
 
     return evolve_board(grid, neighbor_grid)
 
@@ -178,7 +177,7 @@ def evolve_board_part_two(grid_stack: Dict[int, np.ndarray]):
 def part_two(data, num_iterations):
     grid_stack = {0: make_grid(data)}
     for i in range(num_iterations):
-        # print(f"Running generation {i+1}/{num_iterations}...")
+        print(f"Running generation {i+1}/{num_iterations}...")
         evolve_board_part_two(grid_stack)
 
     return sum(grid_stack[x].sum() for x in grid_stack)
