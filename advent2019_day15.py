@@ -253,9 +253,13 @@ droid = run_tape_generator(DATA)
 next(droid)  # Initialize droid to first input
 
 map, steps, oxy_pos = explore_map(droid, manual_explore=False)
+if SCREEN_TTY and SCREEN_SIZE[1] >= 40:
+    curses.endwin()
 print(f"Oxygen machine is {steps[oxy_pos]} away from start")
 
 final_map, steps, final_pos = explore_map(droid, discovered_map=map, starting_pos=oxy_pos, manual_explore=False)
+if SCREEN_TTY and SCREEN_SIZE[1] >= 40:
+    curses.endwin()
 print(f"Oxygen takes {max(steps.values())} to reach all of the level")
 
 print_map(final_map, final_pos, steps)

@@ -89,6 +89,8 @@ def part_two(data):
                 paddle_input = get_next_input(pos_x, current_paddle_position)
             curses_screen.addstr(pos_y, pos_x, TILE_PRINT_DICT[tile_id])
         curses_screen.refresh()
+    if sys.stdout.isatty():
+        curses.endwin()
     return score
 
 
